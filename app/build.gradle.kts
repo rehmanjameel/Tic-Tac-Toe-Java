@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "org.codebase.tictactoe"
+    namespace = "org.codebase.xticotact"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "org.codebase.tictactoe"
+        applicationId = "org.codebase.xticotact"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -28,6 +28,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    viewBinding {
+        enable = true
     }
 }
 

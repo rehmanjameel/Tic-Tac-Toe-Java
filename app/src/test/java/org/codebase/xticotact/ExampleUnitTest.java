@@ -1,4 +1,4 @@
-package org.codebase.tictactoe;
+package org.codebase.xticotact;
 
 import org.junit.Test;
 

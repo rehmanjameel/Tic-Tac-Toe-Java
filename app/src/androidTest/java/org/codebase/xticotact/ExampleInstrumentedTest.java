@@ -1,4 +1,4 @@
-package org.codebase.tictactoe;
+package org.codebase.xticotact;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("org.codebase.tictactoe", appContext.getPackageName());
+        assertEquals("org.codebase.xticotact", appContext.getPackageName());
     }
 }
