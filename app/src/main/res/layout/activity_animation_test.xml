@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AnimationTestActivity">
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/hurrahAnimation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:lottie_rawRes="@raw/confettianimation"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="false"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:visibility="gone"/>
+
+<!--    <nl.dionsegijn.konfetti.xml.KonfettiView-->
+<!--        android:id="@+id/konfettiView"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"/>-->
+
+    <Button
+        android:id="@+id/showHurrahBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show Hurrah"
+        android:layout_centerInParent="true"/>
+
+
+
+</RelativeLayout>

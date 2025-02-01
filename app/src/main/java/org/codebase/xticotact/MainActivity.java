@@ -1,8 +1,12 @@
 package org.codebase.xticotact;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.splashscreen.SplashScreen;
 
+import android.animation.Animator;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.Animation;
@@ -19,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
 
     private boolean gameActive = true;
+    private MediaPlayer mediaPlayer;
 
     // Player representation
     // 0 - X
@@ -37,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Handle the splash screen transition.
+        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         // Initialize ViewBinding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -47,6 +54,10 @@ public class MainActivity extends AppCompatActivity {
 
         // Set restart button listener
         binding.restartButton.setOnClickListener(v -> gameReset());
+
+        // Load sound
+        mediaPlayer = MediaPlayer.create(this, R.raw.hurrah); // Place sound in res/raw
+
     }
 
     public void playerTap(View view) {
@@ -103,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // Somebody has won! - Find out who!
                 String winnerStr = (gameState[winPosition[0]] == 0) ? "X has won!" : "O has won!";
-
+                showHurrahAnimation();
                 // Update the status bar for winner announcement
                 binding.statusTextView.setText(winnerStr);
                 gameActive = false;
@@ -219,6 +230,47 @@ public class MainActivity extends AppCompatActivity {
 
             // Reset the background color to white
             imageView.setBackgroundColor(getResources().getColor(android.R.color.white));
+        }
+    }
+
+    private void showHurrahAnimation() {
+        binding.hurrahAnimation.setVisibility(View.VISIBLE);
+        binding.hurrahAnimation.playAnimation();
+
+        if (mediaPlayer != null) {
+            mediaPlayer.start();
+        }
+
+        // Hide animation after completion
+        binding.hurrahAnimation.addAnimatorListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(@NonNull Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(@NonNull Animator animator) {
+                binding.hurrahAnimation.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationCancel(@NonNull Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(@NonNull Animator animator) {
+
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
         }
     }
 
