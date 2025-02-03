@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -10,8 +11,8 @@ android {
         applicationId = "org.codebase.xticotact"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,4 +49,14 @@ dependencies {
     implementation ("androidx.core:core-splashscreen:1.0.1")
     implementation ("com.airbnb.android:lottie:6.4.1") // Lottie for animation
     implementation ("nl.dionsegijn:konfetti-xml:2.0.2") // Konfetti for confetti effect
+
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
+
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
+
+    // Add the dependency for the Analytics library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-analytics")
+
 }

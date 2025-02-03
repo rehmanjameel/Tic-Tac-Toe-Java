@@ -8,11 +8,22 @@ import androidx.core.splashscreen.SplashScreen;
 import android.animation.Animator;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.RequestConfiguration;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import org.codebase.xticotact.databinding.ActivityMainBinding;
 
@@ -21,10 +32,13 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     private boolean gameActive = true;
     private MediaPlayer mediaPlayer;
+    private InterstitialAd mInterstitialAd;
 
+    private int wonCount = 0;
     // Player representation
     // 0 - X
     // 1 - O
@@ -42,8 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Handle the splash screen transition.
-        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
+
         super.onCreate(savedInstanceState);
         // Initialize ViewBinding
         binding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -58,6 +71,13 @@ public class MainActivity extends AppCompatActivity {
         // Load sound
         mediaPlayer = MediaPlayer.create(this, R.raw.hurrah); // Place sound in res/raw
 
+        // Obtain the FirebaseAnalytics instance.
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "id");
+        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, "name");
+        bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "image");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
     }
 
     public void playerTap(View view) {
@@ -115,6 +135,24 @@ public class MainActivity extends AppCompatActivity {
                 // Somebody has won! - Find out who!
                 String winnerStr = (gameState[winPosition[0]] == 0) ? "X has won!" : "O has won!";
                 showHurrahAnimation();
+
+                if (winnerStr.equals("X has won!")) {
+                    wonCount++;
+//                    Toast.makeText(this, "x : "+ wonCount, Toast.LENGTH_SHORT).show();
+                    if (wonCount == 2) {
+                        wonCount = 0;
+                        new Handler().postDelayed(this::showInterstitialAd, 2000);
+
+                    }
+                } else {
+                    wonCount--;
+                    if (wonCount == -2) {
+                        wonCount = 0;
+                        new Handler().postDelayed(this::showInterstitialAd, 2000);
+                    }
+                }
+
+
                 // Update the status bar for winner announcement
                 binding.statusTextView.setText(winnerStr);
                 gameActive = false;
@@ -263,6 +301,51 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+
+    private void loadInterstitialAd() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+
+        InterstitialAd.load(this, getString(R.string.interstitial_ad_id), adRequest,
+                new InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                        mInterstitialAd = interstitialAd;
+                        Log.d("AdMob", "Interstitial ad loaded");
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError adError) {
+                        Log.d("AdMob", "Interstitial ad failed: " + adError.getMessage());
+                        mInterstitialAd = null;
+                    }
+                });
+    }
+
+    private void showInterstitialAd() {
+        if (mInterstitialAd != null) {
+            mInterstitialAd.show(this);
+        } else {
+            Log.d("AdMob", "Interstitial ad is not ready yet.");
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Restrict ads to 13+ audience
+        RequestConfiguration requestConfiguration = new RequestConfiguration.Builder()
+                .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_T)
+                .build();
+
+        MobileAds.initialize(this, initializationStatus -> {});
+        MobileAds.setRequestConfiguration(requestConfiguration);
+        loadInterstitialAd();
+
+        //load ads
+        AdRequest adRequest = new AdRequest.Builder().build();
+        binding.adView.loadAd(adRequest);
     }
 
     @Override
