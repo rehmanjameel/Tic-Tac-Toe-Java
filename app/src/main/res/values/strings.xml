@@ -3,4 +3,11 @@
     <string name="banner_ad_id">ca-app-pub-9690460963180886/1525801280</string>
     <string name="interstitial_ad_id">ca-app-pub-9690460963180886/8371508710</string>
     <string name="app_ad_id">ca-app-pub-9690460963180886~3020714347</string>
+
+
+    <string-array name="grid_sizes">
+        <item>3x3</item>
+        <item>5x5</item>
+        <item>7x7</item>
+    </string-array>
 </resources>
