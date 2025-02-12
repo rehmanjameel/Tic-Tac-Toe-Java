@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -78,6 +79,9 @@ public class MainActivity extends AppCompatActivity {
         // Set restart button listener
         binding.restartButton.setOnClickListener(v -> initializeBoard(gridSize));
 
+        // Set gridlayout to restart the game
+        binding.gridLayout.setOnClickListener(view -> initializeBoard(gridSize));
+
         // Load sound
         mediaPlayer = MediaPlayer.create(this, R.raw.hurrah); // Place sound in res/raw
 
@@ -103,18 +107,31 @@ public class MainActivity extends AppCompatActivity {
 
         gameState = new int[gridSize][gridSize];
 
-        // Fixed width and height in pixels (350dp x 400dp)
-        int gridWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 350, getResources().getDisplayMetrics());
-        int gridHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 400, getResources().getDisplayMetrics());
+        // Fixed GridLayout width and height in dp
+        int totalGridWidthDp = 350;  // Full grid width including margins
+        int totalGridHeightDp = 400; // Full grid height including margins
+        int cellAreaWidthDp = 315;   // **Only for cells, margins will use remaining space**
+        int cellAreaHeightDp = 370;  // **Height reserved for cells**
+        int marginDp = 2;            // Small margin
 
-        // Calculate cell size based on fixed GridLayout size
-        int cellSize = Math.min(gridWidth, gridHeight) / gridSize;
+        // Convert dp to pixels
+        int totalGridWidthPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, totalGridWidthDp, getResources().getDisplayMetrics());
+        int totalGridHeightPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, totalGridHeightDp, getResources().getDisplayMetrics());
+        int cellAreaWidthPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, cellAreaWidthDp, getResources().getDisplayMetrics());
+        int cellAreaHeightPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, cellAreaHeightDp, getResources().getDisplayMetrics());
+        int marginPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, marginDp, getResources().getDisplayMetrics());
 
-        // Apply fixed dimensions to GridLayout
+        // Apply fixed dimensions to GridLayout and center it
         ViewGroup.LayoutParams gridParams = gridLayout.getLayoutParams();
-        gridParams.width = gridWidth;
-        gridParams.height = gridHeight;
+        gridParams.width = totalGridWidthPx;
+        gridParams.height = totalGridHeightPx;
         gridLayout.setLayoutParams(gridParams);
+
+        // **Fix both column & row overflow issues**:
+        int totalMarginWidth = (gridSize - 1) * marginPx;
+        int totalMarginHeight = (gridSize - 1) * marginPx;
+        int cellWidth = (cellAreaWidthPx - totalMarginWidth) / gridSize;
+        int cellHeight = (cellAreaHeightPx - totalMarginHeight) / gridSize; // Now height is also fixed properly
 
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
@@ -122,14 +139,15 @@ public class MainActivity extends AppCompatActivity {
 
                 ImageView cell = new ImageView(this);
                 cell.setAdjustViewBounds(true);
+                cell.setPadding(2, 2, 2, 2);
                 cell.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 cell.setImageResource(android.R.color.transparent);
                 cell.setBackgroundColor(Color.WHITE);
 
                 GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-                params.width = cellSize;
-                params.height = cellSize;
-                params.setMargins(1, 1, 1, 1);
+                params.width = cellWidth;
+                params.height = cellHeight;
+                params.setMargins(marginPx, marginPx, marginPx, marginPx);
                 cell.setLayoutParams(params);
 
                 final int finalI = i;
@@ -142,46 +160,60 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     private List<int[]> generateWinPositions(int gridSize) {
         List<int[]> winPositions = new ArrayList<>();
 
+        int winCondition = (gridSize == 5) ? 4 : (gridSize == 7) ? 5
+                : (gridSize == 9) ? 6 : gridSize; // 4 for 5x5, 5 for 7x7, full for 3x3
+
         // Rows
         for (int row = 0; row < gridSize; row++) {
-            int[] winRow = new int[gridSize];
-            for (int col = 0; col < gridSize; col++) {
-                winRow[col] = row * gridSize + col;
+            for (int start = 0; start <= gridSize - winCondition; start++) {
+                int[] winRow = new int[winCondition];
+                for (int i = 0; i < winCondition; i++) {
+                    winRow[i] = row * gridSize + (start + i);
+                }
+                winPositions.add(winRow);
             }
-            winPositions.add(winRow);
         }
 
         // Columns
         for (int col = 0; col < gridSize; col++) {
-            int[] winColumn = new int[gridSize];
-            for (int row = 0; row < gridSize; row++) {
-                winColumn[row] = row * gridSize + col;
+            for (int start = 0; start <= gridSize - winCondition; start++) {
+                int[] winColumn = new int[winCondition];
+                for (int i = 0; i < winCondition; i++) {
+                    winColumn[i] = (start + i) * gridSize + col;
+                }
+                winPositions.add(winColumn);
             }
-            winPositions.add(winColumn);
         }
 
-        // Primary Diagonal
-        int[] primaryDiagonal = new int[gridSize];
-        for (int i = 0; i < gridSize; i++) {
-            primaryDiagonal[i] = i * gridSize + i;
+        // Primary Diagonal (\ direction)
+        for (int row = 0; row <= gridSize - winCondition; row++) {
+            for (int col = 0; col <= gridSize - winCondition; col++) {
+                int[] primaryDiagonal = new int[winCondition];
+                for (int i = 0; i < winCondition; i++) {
+                    primaryDiagonal[i] = (row + i) * gridSize + (col + i);
+                }
+                winPositions.add(primaryDiagonal);
+            }
         }
-        winPositions.add(primaryDiagonal);
 
-        // Secondary Diagonal
-        int[] secondaryDiagonal = new int[gridSize];
-        for (int i = 0; i < gridSize; i++) {
-            secondaryDiagonal[i] = i * gridSize + (gridSize - 1 - i);
+        // Secondary Diagonal (/ direction)
+        for (int row = 0; row <= gridSize - winCondition; row++) {
+            for (int col = winCondition - 1; col < gridSize; col++) {
+                int[] secondaryDiagonal = new int[winCondition];
+                for (int i = 0; i < winCondition; i++) {
+                    secondaryDiagonal[i] = (row + i) * gridSize + (col - i);
+                }
+                winPositions.add(secondaryDiagonal);
+            }
         }
-        winPositions.add(secondaryDiagonal);
 
         return winPositions;
     }
 
-
+    // method to apply the players X or O in board
     private void playerTap(int row, int col, ImageView img) {
         if (!gameActive || gameState[row][col] != 2) return;
 
@@ -232,103 +264,36 @@ public class MainActivity extends AppCompatActivity {
 
             if (win) {
                 String winnerStr = (firstCell == 0) ? "X has won!" : "O has won!";
+                if (winnerStr.equals("X has won!")) {
+                    wonCount++;
+                    if (wonCount == 2) {
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                showInterstitialAd();
+                            }
+                        }, 1500);
+                    }
+                } else {
+                    wonCount--;
+                    if (wonCount == -2) {
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                showInterstitialAd();
+                            }
+                        }, 1500);
+                    }
+                }
                 binding.statusTextView.setText(winnerStr);
                 gameActive = false;
                 highlightWinningCells(winPosition);
                 applyWinAnimation();
+                showHurrahAnimation();
                 return;
             }
         }
     }
-
-
-//    public void playerTap(View view) {
-//        if (!gameActive) {
-//            gameReset();
-//            return;
-//        }
-//
-//        ImageView img = (ImageView) view;
-//        int tappedImage = Integer.parseInt(img.getTag().toString());
-//
-//        // If the tapped image is empty
-//        if (gameState[tappedImage] == 2) {
-//            // Mark this position
-//            gameState[tappedImage] = activePlayer;
-//            counter++;
-//
-//            // Set the image and animate
-//            if (activePlayer == 0) {
-//                img.setImageResource(R.drawable.x);
-//                img.setImageTintList(ContextCompat.getColorStateList(this, R.color.xColor));
-//                binding.statusTextView.setText("O's Turn");
-//                activePlayer = 1;
-//            } else {
-//                img.setImageResource(R.drawable.o);
-//                img.setImageTintList(ContextCompat.getColorStateList(this, R.color.oColor));
-//                binding.statusTextView.setText("X's Turn");
-//                activePlayer = 0;
-//            }
-//
-//            // Animation: Slide in from top
-//            img.setTranslationY(-1000f);
-//            img.animate().translationYBy(1000f).setDuration(300).start();
-//
-//            // Check for a win or draw
-//            if (counter >= 5) {
-//                checkWin();
-//            }
-//
-//            if (counter == 9 && gameActive) {
-//                // Draw scenario
-//                binding.statusTextView.setText("It's a Draw!");
-//                applyDrawAnimation();
-//                gameActive = false;
-//            }
-//        }
-//    }
-//
-//    private void checkWin() {
-//        for (int[] winPosition : winPositions) {
-//            if (gameState[winPosition[0]] == gameState[winPosition[1]] &&
-//                    gameState[winPosition[1]] == gameState[winPosition[2]] &&
-//                    gameState[winPosition[0]] != 2) {
-//
-//                // Somebody has won! - Find out who!
-//                String winnerStr = (gameState[winPosition[0]] == 0) ? "X has won!" : "O has won!";
-//                showHurrahAnimation();
-//
-//                if (winnerStr.equals("X has won!")) {
-//                    wonCount++;
-////                    Toast.makeText(this, "x : "+ wonCount, Toast.LENGTH_SHORT).show();
-//                    if (wonCount == 2) {
-//                        wonCount = 0;
-//                        new Handler().postDelayed(this::showInterstitialAd, 2000);
-//
-//                    }
-//                } else {
-//                    wonCount--;
-//                    if (wonCount == -2) {
-//                        wonCount = 0;
-//                        new Handler().postDelayed(this::showInterstitialAd, 2000);
-//                    }
-//                }
-//
-//
-//                // Update the status bar for winner announcement
-//                binding.statusTextView.setText(winnerStr);
-//                gameActive = false;
-//
-//                // Highlight winning positions
-//                highlightWinningCells(winPosition);
-//
-//                // Apply winning animation
-//                applyWinAnimation();
-//
-//                return;
-//            }
-//        }
-//    }
 
     private void highlightWinningCells(int[] winPosition) {
         for (int pos : winPosition) {
@@ -336,32 +301,6 @@ public class MainActivity extends AppCompatActivity {
             int col = pos % gridSize;
             ImageView img = (ImageView) gridLayout.getChildAt(row * gridSize + col);
             img.setBackgroundColor(ContextCompat.getColor(this, R.color.winnerColor));
-        }
-    }
-
-
-    private ImageView getImageViewByTag(int tag) {
-        switch (tag) {
-            case 0:
-                return binding.imageView0;
-            case 1:
-                return binding.imageView1;
-            case 2:
-                return binding.imageView2;
-            case 3:
-                return binding.imageView3;
-            case 4:
-                return binding.imageView4;
-            case 5:
-                return binding.imageView5;
-            case 6:
-                return binding.imageView6;
-            case 7:
-                return binding.imageView7;
-            case 8:
-                return binding.imageView8;
-            default:
-                return null;
         }
     }
 
@@ -378,63 +317,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-        }
-    }
-
-    private void applyDrawAnimation() {
-        Animation drawAnim = AnimationUtils.loadAnimation(this, R.anim.draw_animation);
-        binding.gridLayout.startAnimation(drawAnim);
-    }
-
-    private void gameReset() {
-        // Set game state back to the default
-        gameActive = true;
-        activePlayer = 0;
-
-        // Stop the draw animation if it is running
-        binding.gridLayout.clearAnimation();  // This will stop the blinking animation
-
-        // Reset all game positions to empty (2 means empty)
-        Arrays.fill(gameState, 2);
-
-        // Reset the counter to track turns
-        counter = 0;
-
-        // Stop any blinking animations on the ImageViews and reset background colors
-        resetImageViews();
-
-        // Reset all the images in the grid to be empty
-        binding.imageView0.setImageResource(0);
-        binding.imageView1.setImageResource(0);
-        binding.imageView2.setImageResource(0);
-        binding.imageView3.setImageResource(0);
-        binding.imageView4.setImageResource(0);
-        binding.imageView5.setImageResource(0);
-        binding.imageView6.setImageResource(0);
-        binding.imageView7.setImageResource(0);
-        binding.imageView8.setImageResource(0);
-
-        // Update the status text to show it's X's turn
-        binding.statusTextView.setText("X's Turn - Tap to play");
-
-        // Ensure the grid layout stays visible after resetting
-        binding.gridLayout.setVisibility(View.VISIBLE);
-    }
-
-    private void resetImageViews() {
-        // Reset all image views by stopping animations and setting background color to white
-        ImageView[] imageViews = {
-                binding.imageView0, binding.imageView1, binding.imageView2,
-                binding.imageView3, binding.imageView4, binding.imageView5,
-                binding.imageView6, binding.imageView7, binding.imageView8
-        };
-
-        for (ImageView imageView : imageViews) {
-            // Stop any ongoing animations
-            imageView.clearAnimation();
-
-            // Reset the background color to white
-            imageView.setBackgroundColor(getResources().getColor(android.R.color.white));
         }
     }
 
