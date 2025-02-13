@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean gameActive = true;
     private MediaPlayer mediaPlayer;
     private InterstitialAd mInterstitialAd;
-    private int gridSize = 5; // Change to 5 or 7 for larger boards
+    private int gridSize = 3; // Change to 5 or 7 for larger boards
 
     private int wonCount = 0;
     // Player representation
@@ -71,6 +71,18 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         gridLayout = binding.gridLayouts;
+
+        String gameLevelType = getIntent().getStringExtra("level_type");
+        if (gameLevelType!= null && gameLevelType.equals("easy_level")) {
+            gridSize = 3;
+        } else if (gameLevelType!= null && gameLevelType.equals("medium_level")) {
+            gridSize = 5;
+        } else if (gameLevelType!= null && gameLevelType.equals("hard_level")) {
+            gridSize = 7;
+        }
+
+        binding.titleTextView.setShadowLayer(10, 5,5, ContextCompat.getColor(this, R.color.oColor));
+        binding.statusTextView.setShadowLayer(10, 5,5, ContextCompat.getColor(this, R.color.oColor));
 
         initializeBoard(gridSize);
         // Set initial status
@@ -266,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
                 String winnerStr = (firstCell == 0) ? "X has won!" : "O has won!";
                 if (winnerStr.equals("X has won!")) {
                     wonCount++;
-                    if (wonCount == 2) {
+                    if (wonCount == 1) {
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {

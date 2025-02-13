@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "org.codebase.xticotact"
-        minSdk = 24
+        minSdk = 28
         targetSdk = 35
         versionCode = 2
         versionName = "1.1"
